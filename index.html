@@ -1,100 +1,103 @@
-"""<!DOCTYPE html>
-<html lang="en">
+HTML('''
+<!DOCTYPE html>
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>5ive_TTBoom</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="5ive_TTBOOM — play chords and melodies with your hands through your webcam.">
+<meta property="og:title" content="5ive_TTBOOM">
+<meta property="og:description" content="Play chords and melodies with your hands through your webcam.">
+<meta property="og:type" content="website">
+<title>5ive_TTBOOM</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; background: #120d0a; color: #f2e2ce;
-    font-family: "Courier New", Courier, Georgia, serif; overflow: hidden; }
+  html, body { width: 100%; height: 100%; background: #000; color: #ffcc00;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
 
-  /* 빈티지 카메라 연출을 위한 메인 스테이지 스타일 수정 */
-  #stage {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* 세피아 톤, 약간 낮은 대비, 아날로그적인 블러 및 브라운 채도 적용 */
-    filter: sepia(0.65) contrast(0.95) brightness(0.85) saturate(1.2);
-  }
-
+  /* Vintage Camcorder Video Effect */
   #video {
     transform: scaleX(-1);
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.5;
+    filter: contrast(1.15) brightness(0.9) saturate(0.7) sepia(0.2);
   }
 
-  /* 1. 아날로그 CRT 스캔라인 및 롤링 노이즈 효과 레이어 */
-  #vintage-overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 3;
-    background: linear-gradient(rgba(18, 13, 10, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-    background-size: 100% 4px, 6px 100%;
-    opacity: 0.85;
-  }
+  #canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
-  /* 2. 빈티지 렌즈의 비네팅 효과 (주변부 어둡게 처리) */
-  #vignette {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 4;
-    background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(18,13,10,0.85) 100%);
-  }
-
-  /* 3. 옛날 필름 카메라 특유의 화질 깜빡임(Flicker) 애니메이션 */
-  @keyframes filmFlicker {
-    0% { opacity: 0.08; }
-    50% { opacity: 0.12; }
-    100% { opacity: 0.09; }
-  }
-  #film-grain {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.1;
-    animation: filmFlicker 0.15s infinite;
-  }
-
-  #canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
-
-  #start-screen { position: fixed; inset: 0; background: radial-gradient(circle, #241911 0%, #0d0805 100%);
+  #start-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 30px; z-index: 20; border: 10px solid #1c130d; }
-  h1 { font-family: Georgia, serif; font-size: 54px; font-weight: bold; letter-spacing: 4px; color: #ffb85c; text-shadow: 0 0 10px rgba(255,184,92,0.5), 2px 2px 0px #4d2d14; text-transform: lowercase; }
-  .desc { font-family: "Courier New", Courier, monospace; opacity: 0.85; max-width: 520px; text-align: center; line-height: 1.8; font-size: 14px; color: #f2e2ce; }
-  #start-btn { padding: 16px 50px; font-family: "Courier New", Courier, monospace; font-weight: bold; font-size: 18px; background: #ffb85c; color: #120d0a;
-    border: 3px solid #120d0a; border-radius: 4px; cursor: pointer; letter-spacing: 2px;
-    box-shadow: 4px 4px 0px #4d2d14; transition: all 0.15s; text-transform: uppercase; }
-  #start-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #4d2d14; background: #ffd08a; }
-  #start-btn:disabled { opacity: 0.5; cursor: wait; }
-  #note-display { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-family: Georgia, serif; font-size: 200px; font-weight: bold; color: #ffb85c; opacity: 0.22; pointer-events: none; z-index: 7; text-shadow: 0 0 20px rgba(255,184,92,0.4); }
-  #controls { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: #2b1f16; border: 3px solid #4a3325; box-shadow: 6px 6px 0px rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 4px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: center; z-index: 10; font-family: "Courier New", Courier, monospace; font-size: 12px; font-weight: bold; color: #ffd08a; max-width: 95vw; }
-  #controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-  #controls select, #controls input[type=range] { background: #120d0a; color: #ffb85c; border: 2px solid #4a3325; padding: 4px 8px; font-family: "Courier New", Courier, monospace; font-size: 12px; outline: none; }
-  #controls input[type=range] { padding: 0; width: 80px; accent-color: #ffb85c; cursor: pointer; }
-  #controls input[type=checkbox] { accent-color: #ffb85c; width: 15px; height: 16px; }
+    gap: 24px; z-index: 20; }
+  h1 { font-size: 46px; font-weight: 800; letter-spacing: 4px; color: #ffcc00; text-shadow: 0 0 10px rgba(255, 204, 0, 0.5); }
+  .desc { opacity: 0.9; max-width: 520px; text-align: center; line-height: 1.8; font-size: 15px; color: #ffffff; }
+  .desc b { color: #ffcc00; font-weight: 600; }
+  .desc i { color: #ffcc00; font-style: normal; font-weight: 600; }
+
+  /* Yellow & Black Button */
+  #start-btn { padding: 14px 44px; font-size: 18px; background: #ffcc00; color: #000;
+    border: none; border-radius: 40px; cursor: pointer; letter-spacing: 1px;
+    font-weight: bold; transition: transform 0.15s, box-shadow 0.15s; }
+  #start-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); }
+  #start-btn:disabled { opacity: 0.5; cursor: wait; transform: none; }
+
+  #note-display { position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); font-size: 180px; font-weight: 100;
+    opacity: 0.35; pointer-events: none; z-index: 5; letter-spacing: -8px;
+    font-variant-numeric: tabular-nums; color: #ffcc00; }
+
+  /* Yellow & Black Controls */
+  #controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.85); padding: 10px 18px; border-radius: 40px;
+    display: flex; gap: 20px; align-items: center; z-index: 10;
+    backdrop-filter: blur(10px); font-size: 13px; border: 1px solid #ffcc00; }
+  #controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; color: #ffcc00; font-weight: bold; }
+  #controls select { background: #111; color: #ffcc00; border: 1px solid #ffcc00;
+    padding: 4px 8px; border-radius: 4px; font-size: 13px; outline: none; }
+  #controls input[type=checkbox] { accent-color: #ffcc00; }
+
+  #portrait-warning {
+    position: fixed; inset: 0; background: #000; color: #ffcc00;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; z-index: 100; padding: 40px; text-align: center;
+  }
+  #portrait-warning .icon {
+    font-size: 64px;
+    animation: rotate-hint 2s ease-in-out infinite;
+  }
+  #portrait-warning h2 { font-size: 22px; font-weight: 300; letter-spacing: 3px; }
+  #portrait-warning p { opacity: 0.7; font-size: 14px; line-height: 1.6; white-space: pre-line; }
+
+  #desc-main { display: block; white-space: pre-line; }
+  #cam-note { display: block; margin-top: 18px; opacity: 0.7; color: #aaa; }
+  @keyframes rotate-hint {
+    0%, 100% { transform: rotate(-90deg); }
+    50% { transform: rotate(0deg); }
+  }
+
+  @media (max-width: 900px) {
+    #controls { padding: 7px 12px; gap: 10px; font-size: 13px; border-radius: 24px; }
+    #controls select { padding: 3px 6px; font-size: 13px; }
+    #start-screen { gap: 14px; padding: 20px; }
+    h1 { font-size: 36px; letter-spacing: 2px; }
+    .desc { font-size: 15px; line-height: 1.4; }
+    #start-btn { padding: 14px 40px; font-size: 20px; }
+    #note-display { font-size: 220px; }
+  }
+  @media (orientation: portrait) and (max-width: 900px) {
+    #portrait-warning { display: flex; }
+  }
 </style>
 </head>
 <body>
 <div id="stage">
   <video id="video" autoplay playsinline muted></video>
 </div>
-
-<!-- 빈티지 카메라 전용 오버레이 요소들 -->
-<div id="vintage-overlay"></div>
-<div id="vignette"></div>
-<div id="film-grain"></div>
-
 <canvas id="canvas"></canvas>
 <div id="note-display"></div>
 
@@ -106,7 +109,7 @@
     </select>
   </label>
   <label><input type="checkbox" id="snap" checked> Snap</label>
-  <label><input type="checkbox" id="simple" checked> Simple (ABC)</label>
+  <label><input type="checkbox" id="simple" checked> Simple (ABCDEFG)</label>
   <label>Scale
     <select id="scale">
       <option value="major" selected>Major</option>
@@ -119,8 +122,8 @@
   <label>Wave
     <select id="wave">
       <option value="sine">Sine</option>
-      <option value="triangle">Triangle</option>
-      <option value="sawtooth" selected>Saw</option>
+      <option value="triangle" selected>Triangle</option>
+      <option value="sawtooth">Saw</option>
       <option value="square">Square</option>
     </select>
   </label>
@@ -131,14 +134,16 @@
       <option value="4">4 oct</option>
     </select>
   </label>
-  <label><input type="checkbox" id="use-reverb" checked> Reverb</label>
-  <label>LFO Rate
-    <input type="range" id="lfo-rate" min="1" max="12" step="0.5" value="5">
-  </label>
+</div>
+
+<div id="portrait-warning">
+  <div class="icon">↻</div>
+  <h2 id="pw-title"></h2>
+  <p id="pw-text"></p>
 </div>
 
 <div id="start-screen">
-  <h1>5ive_TTBoom</h1>
+  <h1>5ive_TTBOOM</h1>
   <p class="desc">
     <span id="desc-main"></span>
     <span id="cam-note"></span>
@@ -153,6 +158,11 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+const pitchVal = {};
+const volVal = {};
+const rFistVal = {};
+const chordVal = {};
+const handCount = {};
 const noteDisplay = document.getElementById('note-display');
 const snapEl = document.getElementById('snap');
 const scaleEl = document.getElementById('scale');
@@ -162,44 +172,39 @@ const modeEl = document.getElementById('mode');
 const simpleEl = document.getElementById('simple');
 const startBtn = document.getElementById('start-btn');
 const startScreen = document.getElementById('start-screen');
-const useReverbEl = document.getElementById('use-reverb');
-const lfoRateEl = document.getElementById('lfo-rate');
-
-const pitchVal = {};
-const volVal = {};
-const rFistVal = {};
-const chordVal = {};
-const handCount = {};
 
 const I18N = {
-  ko: {
-    desc: "두 가지 연주 모드와 빈티지 이펙트 보드가 제공됩니다.\n카메라 앞에서 손을 조작하여 빈티지하고 웅장한 선율을 지휘하세요.",
-    cam: "연주를 시작하려면 카메라 권한을 승인해야 합니다.",
-    start: "연주 시작하기",
-    loading: "시스템 로딩 중...",
-    retry: "재시도",
-    rotateTitle: "화면을 가로로 회전해주세요",
-    rotate: "5ive_TTBoom은 가로 화면에 최적화되어 있습니다.",
-    permError: "카메라 권한 설정이 필요합니다."
-  },
   en: {
-    desc: "Two performance modes with vintage LFO/Reverb effects.\nUse your hands in front of the camera to play lush chords and melodies.",
-    cam: "Camera permission is required to start your session.",
-    start: "Engage Synthesizer",
-    loading: "Loading Systems...",
+    desc: "Winter Vacation Workshop Test Program",
+    cam: "You'll need to allow camera access to play.",
+    start: "연주 시작",
+    loading: "Loading...",
     retry: "Retry",
     rotateTitle: "ROTATE TO LANDSCAPE",
-    rotate: "5ive_TTBoom requires landscape orientation.",
-    permError: "Camera access denied."
+    rotate: "5ive_TTBOOM works in landscape.\nPlease rotate your device.",
+    permError: "Camera permission is required."
+  },
+  ko: {
+    desc: "겨울방학 워크샵 테스트 프로그램",
+    cam: "카메라 권한을 허용해주셔야 사용할 수 있어요.",
+    start: "연주 시작",
+    loading: "불러오는 중...",
+    retry: "다시 시도",
+    rotateTitle: "가로로 돌려주세요",
+    rotate: "5ive_TTBOOM은 가로 화면에서 작동합니다.\n기기를 가로로 돌려주세요.",
+    permError: "카메라 권한이 필요합니다."
   }
 };
 
-const LANG = navigator.language.startsWith('ko') ? 'ko' : 'en';
+const LANG = 'ko';
 function t(key) { return I18N[LANG][key] || I18N.en[key]; }
 
 function applyI18n() {
+  document.documentElement.lang = LANG;
   document.getElementById('desc-main').textContent = t('desc');
   document.getElementById('cam-note').textContent = t('cam');
+  document.getElementById('pw-title').textContent = t('rotateTitle');
+  document.getElementById('pw-text').textContent = t('rotate');
   startBtn.textContent = t('start');
 }
 applyI18n();
@@ -209,7 +214,7 @@ const SCALES = {
   major: [0, 2, 4, 5, 7, 9, 11],
   minor: [0, 2, 3, 5, 7, 8, 10],
   blues: [0, 3, 5, 6, 7, 10],
-  chromatic: [0,1,2,3,4,5,6,7,8,9,10,11]
+  chromatic: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const MIDI_BASE = 48;
@@ -229,43 +234,34 @@ function midiName(m) {
   return NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1);
 }
 
-let osc, gainNode, filter, vibrato, tremolo, reverb;
+let osc, gainNode, filter;
 let chordOscs = [], chordGain, chordFilter;
 function initAudio() {
-  reverb = new Tone.Reverb({ roomSize: 0.7, wet: 0.4 }).toDestination();
-  filter = new Tone.Filter(1500, 'lowpass').connect(reverb);
-
-  vibrato = new Tone.Vibrato(5, 0.15).connect(filter);
-  tremolo = new Tone.Tremolo(5, 0.3).connect(vibrato).start();
-
-  gainNode = new Tone.Gain(0).connect(tremolo);
-  osc = new Tone.Oscillator(220, 'sine').connect(gainNode);
+  filter = new Tone.Filter(2400, 'lowpass').toDestination();
+  gainNode = new Tone.Gain(0).connect(filter);
+  osc = new Tone.Oscillator(220, 'triangle').connect(gainNode);
   osc.start();
 
-  chordFilter = new Tone.Filter(1200, 'lowpass').connect(tremolo);
+  chordFilter = new Tone.Filter(1800, 'lowpass').toDestination();
   chordGain = new Tone.Gain(0).connect(chordFilter);
   for (let i = 0; i < 4; i++) {
     const o = new Tone.Oscillator(220, 'triangle').connect(chordGain);
     o.start();
     chordOscs.push(o);
   }
-
-  useReverbEl.addEventListener('change', (e) => {
-    reverb.wet.rampTo(e.target.checked ? 0.4 : 0, 0.2);
-  });
-  lfoRateEl.addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    vibrato.frequency.value = val;
-    tremolo.frequency.value = val;
-  });
 }
 
-function dist2D(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function dist2D(a, b) {
+  const dx = a.x - b.x, dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 function pinchAmount(lm) {
   const palm = dist2D(lm[0], lm[9]);
   if (palm < 1e-4) return 0;
   const ratio = dist2D(lm[4], lm[8]) / palm;
-  return Math.max(0, Math.min(1, (0.80 - ratio) / 0.50));
+  const CLOSED = 0.35, OPEN = 0.75;
+  return Math.max(0, Math.min(1, (OPEN - ratio) / (OPEN - CLOSED)));
 }
 
 let currentFreq = 220;
@@ -275,17 +271,21 @@ let activeMidi = null;
 let chordRoot = null;
 let chordTones = [];
 let chordIsMinor = false;
-let KEYBOARD_H = 180;
-let KEYBOARD_BOTTOM_OFFSET = 100;
-const CHORD_WHEEL = { cx: 240, cy: 300, outerR: 200, innerR: 70, slices: 12 };
-const QUALITY_WHEEL = { cx: 1240, cy: 300, outerR: 200, innerR: 70, slices: 8 };
+let chordClosure = 0;
+let KEYBOARD_H = 200;
+let KEYBOARD_BOTTOM_OFFSET = 120;
+const CHORD_WHEEL = { cx: 240, cy: 300, outerR: 220, innerR: 80, slices: 12 };
+const QUALITY_WHEEL = { cx: 1240, cy: 300, outerR: 220, innerR: 80, slices: 8 };
 const QUALITY_KEYS = ['maj', 'maj7', '7', 'sus4', 'm', 'm7', 'dim', 'aug'];
 const DIATONIC_ROOTS = [0, 2, 4, 5, 7, 9, 11];
 const DIATONIC_NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
-function sliceToRootName(i) { return simpleEl.checked ? DIATONIC_NAMES[i] : NOTE_NAMES[i]; }
-function sliceToRootMidi(i) { return simpleEl.checked ? DIATONIC_ROOTS[i] : i; }
-
+function sliceToRootName(i) {
+  return simpleEl.checked ? DIATONIC_NAMES[i] : NOTE_NAMES[i];
+}
+function sliceToRootMidi(i) {
+  return simpleEl.checked ? DIATONIC_ROOTS[i] : i;
+}
 const CHORD_TYPES = {
   maj:  { intervals: [0, 4, 7],     suffix: '',     minorish: false },
   maj7: { intervals: [0, 4, 7, 11], suffix: 'maj7', minorish: false },
@@ -294,58 +294,110 @@ const CHORD_TYPES = {
   m:    { intervals: [0, 3, 7],     suffix: 'm',    minorish: true  },
   m7:   { intervals: [0, 3, 7, 10], suffix: 'm7',   minorish: true  },
   dim:  { intervals: [0, 3, 6],     suffix: 'dim',  minorish: true  },
-  aug:  { intervals: [0, 4, 8],     suffix: 'aug',  minorish: false }
+  aug:  { intervals: [0, 4, 8],     suffix: 'aug',  minorish: false },
 };
 
 function updateWheelPos() {
-  const isTwoHand = modeEl.value === 'two-hand-chord';
-  const r = Math.min(200, Math.floor(Math.min(canvas.width, canvas.height) * 0.28));
+  const isTwoHand = modeEl && modeEl.value === 'two-hand-chord';
+  const isSmall = canvas.width < 900 || canvas.height < 600;
+  const minDim = Math.min(canvas.width, canvas.height);
+  const r = Math.min(220, Math.floor(minDim * (isTwoHand ? 0.28 : 0.3)));
   CHORD_WHEEL.outerR = r;
-  CHORD_WHEEL.innerR = Math.max(30, Math.floor(r * 0.35));
+  CHORD_WHEEL.innerR = Math.max(30, Math.floor(r * 0.36));
   QUALITY_WHEEL.outerR = r;
-  QUALITY_WHEEL.innerR = Math.max(30, Math.floor(r * 0.35));
+  QUALITY_WHEEL.innerR = Math.max(30, Math.floor(r * 0.36));
+
+  KEYBOARD_H = isSmall ? Math.max(110, Math.floor(canvas.height * 0.28)) : 200;
+  KEYBOARD_BOTTOM_OFFSET = isSmall ? 70 : 120;
+
+  const bottomPad = isSmall ? 95 : 90;
+  CHORD_WHEEL.cy = Math.max(
+    CHORD_WHEEL.outerR + (isSmall ? 50 : 70),
+    canvas.height - CHORD_WHEEL.outerR - bottomPad
+  );
   CHORD_WHEEL.slices = simpleEl.checked ? 7 : 12;
-
-  CHORD_WHEEL.cy = canvas.height - r - 80;
-  QUALITY_WHEEL.cy = CHORD_WHEEL.cy;
-
+  const edgePad = isSmall ? 6 : 20;
   if (isTwoHand) {
-    CHORD_WHEEL.cx = r + 40;
-    QUALITY_WHEEL.cx = canvas.width - r - 40;
+    const gap = isSmall ? 30 : 70;
+    const edgeLeft = CHORD_WHEEL.outerR + edgePad;
+    const centerLeft = canvas.width / 2 - CHORD_WHEEL.outerR - gap / 2;
+    CHORD_WHEEL.cx = Math.max(edgeLeft, (edgeLeft + centerLeft) / 2);
+    const edgeRight = canvas.width - QUALITY_WHEEL.outerR - edgePad;
+    const centerRight = canvas.width / 2 + QUALITY_WHEEL.outerR + gap / 2;
+    QUALITY_WHEEL.cx = Math.min(edgeRight, (edgeRight + centerRight) / 2);
   } else {
-    CHORD_WHEEL.cx = r + 30;
-    QUALITY_WHEEL.cx = canvas.width - r - 30;
+    CHORD_WHEEL.cx = CHORD_WHEEL.outerR + edgePad;
+    QUALITY_WHEEL.cx = canvas.width - QUALITY_WHEEL.outerR - edgePad;
   }
+  QUALITY_WHEEL.cy = CHORD_WHEEL.cy;
 }
 
 function qualityWheelHit(hand) {
   const p = hand[8];
-  const dx = (1 - p.x) * canvas.width - QUALITY_WHEEL.cx;
-  const dy = p.y * canvas.height - QUALITY_WHEEL.cy;
+  const { sx, sy } = smoothPos(qualitySmooth, (1 - p.x) * canvas.width, p.y * canvas.height);
+  const dx = sx - QUALITY_WHEEL.cx;
+  const dy = sy - QUALITY_WHEEL.cy;
   const dist = Math.hypot(dx, dy);
-  if (dist < QUALITY_WHEEL.innerR || dist > QUALITY_WHEEL.outerR * 1.3) return { engaged: false };
+  if (dist < QUALITY_WHEEL.innerR) return { engaged: false };
+  if (dist > QUALITY_WHEEL.outerR * 1.3) return { engaged: false };
   let angle = Math.atan2(dy, dx) + Math.PI / 2;
   if (angle < 0) angle += Math.PI * 2;
   const slice = Math.floor(angle / (Math.PI * 2) * QUALITY_WHEEL.slices) % QUALITY_WHEEL.slices;
   return { engaged: true, slice };
 }
 
+function keyboardBounds() {
+  const wheelRight = CHORD_WHEEL.cx + CHORD_WHEEL.outerR + 30;
+  const left = Math.max(canvas.width * 0.35, wheelRight);
+  return { left, width: canvas.width - left, frac: left / canvas.width };
+}
+
 function chordWheelHit(hand) {
   const p = hand[8];
-  const dx = (1 - p.x) * canvas.width - CHORD_WHEEL.cx;
-  const dy = p.y * canvas.height - CHORD_WHEEL.cy;
+  const { sx, sy } = smoothPos(chordSmooth, (1 - p.x) * canvas.width, p.y * canvas.height);
+  const dx = sx - CHORD_WHEEL.cx;
+  const dy = sy - CHORD_WHEEL.cy;
   const dist = Math.hypot(dx, dy);
-  if (dist < CHORD_WHEEL.innerR || dist > CHORD_WHEEL.outerR * 1.3) return { engaged: false };
+  if (dist < CHORD_WHEEL.innerR) return { engaged: false, inside: true };
+  if (dist > CHORD_WHEEL.outerR * 1.3) return { engaged: false, inside: false };
   let angle = Math.atan2(dy, dx) + Math.PI / 2;
   if (angle < 0) angle += Math.PI * 2;
   const slice = Math.floor(angle / (Math.PI * 2) * CHORD_WHEEL.slices) % CHORD_WHEEL.slices;
-  const volume = (Math.min(dist, CHORD_WHEEL.outerR) - CHORD_WHEEL.innerR) / (CHORD_WHEEL.outerR - CHORD_WHEEL.innerR);
-  return { engaged: true, slice, volume };
+  const clamped = Math.min(dist, CHORD_WHEEL.outerR);
+  const volume = (clamped - CHORD_WHEEL.innerR) / (CHORD_WHEEL.outerR - CHORD_WHEEL.innerR);
+  return { engaged: true, inside: true, slice, volume };
 }
 
-function keyboardBounds() {
-  const left = CHORD_WHEEL.cx + CHORD_WHEEL.outerR + 30;
-  return { left, width: canvas.width - left - 40, frac: left / canvas.width };
+function lerp(current, target, alpha) { return current + (target - current) * alpha; }
+
+const chordSmooth = { x: null, y: null };
+const qualitySmooth = { x: null, y: null };
+const POS_SMOOTH = 0.5;
+function smoothPos(state, sx, sy) {
+  state.x = state.x === null ? sx : lerp(state.x, sx, POS_SMOOTH);
+  state.y = state.y === null ? sy : lerp(state.y, sy, POS_SMOOTH);
+  return { sx: state.x, sy: state.y };
+}
+
+const SLICE_DWELL = 3;
+const chordSliceState = { committed: null, cand: null, count: 0 };
+const qualitySliceState = { committed: null, cand: null, count: 0 };
+function stabilizeSlice(raw, s) {
+  if (raw === null || raw === undefined) { s.committed = null; s.cand = null; s.count = 0; return null; }
+  if (s.committed === null || raw === s.committed) { s.committed = raw; s.cand = raw; s.count = 0; return s.committed; }
+  if (raw === s.cand) s.count++; else { s.cand = raw; s.count = 1; }
+  if (s.count >= SLICE_DWELL) { s.committed = raw; s.count = 0; }
+  return s.committed;
+}
+
+function pitchHandXToMidi(pitchX, octaves) {
+  if (snapEl.checked) {
+    const notes = scaleNotes(scaleEl.value, octaves);
+    const idx = Math.max(0, Math.min(notes.length - 1, Math.floor(pitchX * notes.length)));
+    return notes[idx];
+  }
+  const midiMax = MIDI_BASE + octaves * 12;
+  return MIDI_BASE + pitchX * (midiMax - MIDI_BASE);
 }
 
 function onResults(results) {
@@ -357,152 +409,322 @@ function onResults(results) {
   const hands = results.multiHandLandmarks || [];
   let pitchHand = null, leftHand = null;
   if (hands.length === 1) {
-    if ((1 - hands[0][8].x) < 0.5) leftHand = hands[0]; else pitchHand = hands[0];
+    const h = hands[0];
+    const screenX = 1 - h[8].x;
+    if (screenX < 0.5) leftHand = h;
+    else pitchHand = h;
   } else if (hands.length >= 2) {
     const sorted = [...hands].sort((a, b) => a[0].x - b[0].x);
     pitchHand = sorted[0];
     leftHand = sorted[1];
   }
-
   const octaves = parseInt(rangeEl.value, 10);
-  const isTwoHand = modeEl.value === 'two-hand-chord';
+  const mode = modeEl.value;
+  const isTwoHand = mode === 'two-hand-chord';
 
-  let qHit = (isTwoHand && pitchHand) ? qualityWheelHit(pitchHand) : null;
-  let qKey = (qHit && qHit.engaged) ? QUALITY_KEYS[qHit.slice] : 'maj';
+  const qualityHit = (isTwoHand && pitchHand) ? qualityWheelHit(pitchHand) : null;
+  if (qualityHit && qualityHit.engaged) {
+    qualityHit.slice = stabilizeSlice(qualityHit.slice, qualitySliceState);
+  } else {
+    stabilizeSlice(null, qualitySliceState);
+    qualitySmooth.x = qualitySmooth.y = null;
+  }
 
   if (!isTwoHand && pitchHand) {
-    const pPt = pitchHand[8];
-    const screenX = 1 - pPt.x;
+    const pitchPt = pitchHand[8];
+    const screenX = Math.max(0, Math.min(1, 1 - pitchPt.x));
     const kb = keyboardBounds();
     const onKeyboard = screenX >= kb.frac;
-    const kbX = Math.max(0, Math.min(1, (screenX - kb.frac) / (1 - kb.frac)));
-    const midi = snapEl.checked ? scaleNotes(scaleEl.value, octaves)[Math.floor(kbX * scaleNotes(scaleEl.value, octaves).length)] : MIDI_BASE + kbX * (octaves * 12);
+    const keyboardX = Math.max(0, Math.min(1, (screenX - kb.frac) / (1 - kb.frac)));
+    const midi = pitchHandXToMidi(keyboardX, octaves);
+    activeMidi = (snapEl.checked && onKeyboard) ? midi : null;
+    const targetFreq = midiToFreq(midi);
+    const volY = Math.max(0, Math.min(1, 1 - pitchPt.y));
+    const rClosure = pinchAmount(pitchHand);
 
-    activeMidi = onKeyboard ? midi : null;
-    const tFreq = midiToFreq(midi);
-    const volY = 1 - pPt.y;
-    const closure = pinchAmount(pitchHand);
-    const tGain = Math.pow(volY, 1.6) * 0.35 * Math.pow(closure, 1.3) * (onKeyboard ? 1 : 0);
+    // Adjusted fist gate to be responsive to hand position and simpler finger trigger
+    const fistGate = Math.pow(rClosure, 0.8);
+    const zoneGate = onKeyboard ? 1 : 0;
+    const targetGain = Math.pow(volY, 1.4) * 0.45 * (rClosure > 0.15 ? fistGate : 0) * zoneGate;
 
-    currentFreq = currentFreq + (tFreq - currentFreq) * 0.3;
-    currentGain = currentGain + (tGain - currentGain) * 0.25;
-
+    currentFreq = lerp(currentFreq, targetFreq, snapEl.checked ? 0.5 : 0.3);
+    currentGain = lerp(currentGain, targetGain, 0.4);
     osc.frequency.rampTo(currentFreq, 0.04);
-    gainNode.gain.rampTo(currentGain, 0.06);
+    gainNode.gain.rampTo(currentGain, 0.04);
     if (osc.type !== waveEl.value) osc.type = waveEl.value;
-    noteDisplay.textContent = (onKeyboard && closure > 0.3) ? midiName(midi) : '';
+
+    noteDisplay.textContent = (onKeyboard && rClosure > 0.15) ? midiName(midi) : '';
   } else {
-    currentGain = currentGain * 0.75;
-    gainNode.gain.rampTo(currentGain, 0.08);
+    currentGain = lerp(currentGain, 0, 0.25);
+    if (gainNode) gainNode.gain.rampTo(currentGain, 0.05);
     noteDisplay.textContent = '';
     activeMidi = null;
   }
 
-  let wheelHit = leftHand ? chordWheelHit(leftHand) : null;
-  if (leftHand && !isTwoHand) {
-    chordIsMinor = pinchAmount(leftHand) > 0.45;
-    qKey = chordIsMinor ? 'm' : 'maj';
+  const wheelHit = leftHand ? chordWheelHit(leftHand) : null;
+  if (wheelHit && wheelHit.engaged) {
+    wheelHit.slice = stabilizeSlice(wheelHit.slice, chordSliceState);
+  } else {
+    stabilizeSlice(null, chordSliceState);
+    chordSmooth.x = chordSmooth.y = null;
+  }
+  let qualityKey = 'maj';
+  if (isTwoHand) {
+    qualityKey = (qualityHit && qualityHit.engaged) ? QUALITY_KEYS[qualityHit.slice] : 'maj';
+    chordClosure = 0;
+    chordIsMinor = CHORD_TYPES[qualityKey].minorish;
+  } else if (leftHand) {
+    chordClosure = pinchAmount(leftHand);
+    chordIsMinor = chordClosure > 0.45;
+    qualityKey = chordIsMinor ? 'm' : 'maj';
+  } else {
+    chordClosure = 0;
+    chordIsMinor = false;
   }
 
   if (wheelHit && wheelHit.engaged) {
-    const qual = CHORD_TYPES[qKey];
+    const quality = CHORD_TYPES[qualityKey];
+    const intervals = quality.intervals.slice();
+    while (intervals.length < 4) {
+      intervals.push(intervals[intervals.length % quality.intervals.length] + 12);
+    }
     chordRoot = MIDI_BASE + sliceToRootMidi(wheelHit.slice);
-    chordTones = qual.intervals.map(v => chordRoot + v);
-    const tChordGain = isTwoHand ? 0.2 : Math.pow(wheelHit.volume, 1.2) * 0.2;
-
+    chordTones = intervals.slice(0, 4).map(iv => chordRoot + iv);
+    const targetChordGain = isTwoHand ? 0.25 : Math.pow(wheelHit.volume, 1.2) * 0.25;
     chordOscs.forEach((o, i) => {
-      if (qual.intervals[i] !== undefined) {
-        o.frequency.rampTo(midiToFreq(chordRoot + qual.intervals[i]), 0.1);
-      }
+      o.frequency.rampTo(midiToFreq(chordRoot + intervals[i]), 0.12);
     });
-    currentChordGain = currentChordGain + (tChordGain - currentChordGain) * 0.25;
+    currentChordGain = lerp(currentChordGain, targetChordGain, 0.25);
     chordGain.gain.rampTo(currentChordGain, 0.06);
   } else {
-    currentChordGain = currentChordGain * 0.75;
-    chordGain.gain.rampTo(currentChordGain, 0.08);
+    currentChordGain = lerp(currentChordGain, 0, 0.2);
+    if (chordGain) chordGain.gain.rampTo(currentChordGain, 0.08);
     chordRoot = null;
     chordTones = [];
   }
 
   if (isTwoHand) {
-    drawWheel(CHORD_WHEEL, wheelHit, '#ffb85c');
-    drawWheel(QUALITY_WHEEL, qHit, '#ff8040');
+    drawChordWheel(wheelHit);
+    drawQualityWheel(qualityHit);
   } else {
-    drawKeyboard();
-    drawWheel(CHORD_WHEEL, wheelHit, '#ffb85c');
+    drawKeyboardOrGuide();
+    drawChordWheel(wheelHit);
   }
 
-  if (pitchHand && !isTwoHand) drawCursor(pitchHand[8], '#ffb85c');
-  if (leftHand) drawCursor(leftHand[8], '#ff8040');
+  if (pitchHand) {
+    if (isTwoHand) {
+      const qLabel = (qualityHit && qualityHit.engaged) ? QUALITY_KEYS[qualityHit.slice].toUpperCase() : 'QUALITY';
+      drawHand(pitchHand, '#ffcc00', qLabel);
+    } else {
+      const rc = pinchAmount(pitchHand);
+      const melodyColor = rc > 0.2 ? '#ffcc00' : 'rgba(255,204,0,0.4)';
+      drawHand(pitchHand, melodyColor, rc > 0.2 ? 'MELODY' : 'open');
+      drawPitchLine(pitchHand[8]);
+      drawVolumeLine(pitchHand[8]);
+    }
+  }
+  if (leftHand) {
+    const label = chordRoot !== null
+      ? (chordIsMinor ? 'Minor ' : 'Major ') + NOTE_NAMES[(chordRoot - MIDI_BASE) % 12]
+      : (chordIsMinor ? 'Minor' : 'Major');
+    drawHand(leftHand, chordIsMinor ? '#d4af37' : '#ffcc00', label);
+  }
 }
 
-function drawWheel(wheel, hit, themeColor) {
-  const { cx, cy, outerR, innerR, slices } = wheel;
-  const active = hit && hit.engaged ? hit.slice : -1;
+function drawQualityWheel(hit) {
+  const { cx, cy, outerR, innerR, slices } = QUALITY_WHEEL;
+  const activeSlice = hit && hit.engaged ? hit.slice : -1;
+  const mobileBoost = (canvas.width < 900 || canvas.height < 600) ? 2.3 : 1;
+  const s = (outerR / 220) * mobileBoost;
+
   ctx.save();
-  ctx.fillStyle = '#1c130d';
-  ctx.strokeStyle = '#4a3325';
-  ctx.lineWidth = 3;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
   ctx.beginPath();
-  ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+  ctx.arc(cx, cy, outerR + 6, 0, Math.PI * 2);
   ctx.fill();
-  ctx.stroke();
 
   for (let i = 0; i < slices; i++) {
     const a0 = (i - 0.5) / slices * Math.PI * 2 - Math.PI / 2;
     const a1 = (i + 0.5) / slices * Math.PI * 2 - Math.PI / 2;
-    if (i === active) {
-      ctx.fillStyle = themeColor + '66';
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, outerR, a0, a1);
-      ctx.closePath();
-      ctx.fill();
-    }
-    const mid = (a0 + a1) / 2;
-    const lx = cx + Math.cos(mid) * outerR * 0.72;
-    const ly = cy + Math.sin(mid) * outerR * 0.72;
-    ctx.fillStyle = (i === active) ? '#ffffff' : '#ffd08a';
-    ctx.font = 'bold 15px "Courier New", monospace';
+    const isActive = i === activeSlice;
+    ctx.fillStyle = isActive ? 'rgba(255,204,0,0.6)' : 'rgba(255,204,0,0.1)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, outerR, a0, a1);
+    ctx.closePath();
+    ctx.fill();
+
+    const midA = (a0 + a1) / 2;
+    const lr = outerR * 0.72;
+    const lx = cx + Math.cos(midA) * lr;
+    const ly = cy + Math.sin(midA) * lr;
+    ctx.fillStyle = isActive ? '#000' : 'rgba(255,255,255,0.8)';
+    ctx.font = (isActive ? 'bold ' : '') + Math.round((isActive ? 22 : 18) * s) + 'px -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const name = (wheel === CHORD_WHEEL) ? sliceToRootName(i) : QUALITY_KEYS[i];
-    ctx.fillText(name, lx, ly);
+    ctx.fillText(QUALITY_KEYS[i], lx, ly);
   }
+
+  ctx.strokeStyle = 'rgba(255,204,0,0.2)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < slices; i++) {
+    const a = (i + 0.5) / slices * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * innerR, cy + Math.sin(a) * innerR);
+    ctx.lineTo(cx + Math.cos(a) * outerR, cy + Math.sin(a) * outerR);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#ffcc00';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.restore();
 }
 
-function drawKeyboard() {
-  const kb = keyboardBounds();
-  const notes = scaleNotes(scaleEl.value, parseInt(rangeEl.value, 10));
-  const keyW = kb.width / notes.length;
-  const keyY = canvas.height - KEYBOARD_H - KEYBOARD_BOTTOM_OFFSET;
+function drawChordWheel(hit) {
+  const { cx, cy, outerR, innerR, slices } = CHORD_WHEEL;
+  const activeSlice = hit && hit.engaged ? hit.slice : -1;
+  const mobileBoost = (canvas.width < 900 || canvas.height < 600) ? 2.3 : 1;
+  const s = (outerR / 220) * mobileBoost;
 
-  ctx.fillStyle = '#1c130d';
-  ctx.fillRect(kb.left, keyY, kb.width, KEYBOARD_H);
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR + 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  for (let i = 0; i < slices; i++) {
+    const a0 = (i - 0.5) / slices * Math.PI * 2 - Math.PI / 2;
+    const a1 = (i + 0.5) / slices * Math.PI * 2 - Math.PI / 2;
+    const isActive = i === activeSlice;
+    ctx.fillStyle = isActive ? 'rgba(255,204,0,0.7)' : 'rgba(255,204,0,0.08)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, outerR, a0, a1);
+    ctx.closePath();
+    ctx.fill();
+
+    const midA = (a0 + a1) / 2;
+    const lr = outerR * 0.72;
+    const lx = cx + Math.cos(midA) * lr;
+    const ly = cy + Math.sin(midA) * lr;
+    ctx.fillStyle = isActive ? '#000' : 'rgba(255,255,255,0.8)';
+    ctx.font = (isActive ? 'bold ' : '') + Math.round((isActive ? 24 : 20) * s) + 'px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(sliceToRootName(i), lx, ly);
+  }
+
+  ctx.strokeStyle = 'rgba(255,204,0,0.2)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < slices; i++) {
+    const a = (i + 0.5) / slices * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * innerR, cy + Math.sin(a) * innerR);
+    ctx.lineTo(cx + Math.cos(a) * outerR, cy + Math.sin(a) * outerR);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#ffcc00';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawKeyboardOrGuide() {
+  if (snapEl.checked) drawKeyboard();
+}
+
+function drawKeyboard() {
+  const octaves = parseInt(rangeEl.value, 10);
+  const notes = scaleNotes(scaleEl.value, octaves);
+  const keyY = canvas.height - KEYBOARD_H - KEYBOARD_BOTTOM_OFFSET;
+  const kb = keyboardBounds();
+  const keyboardLeft = kb.left;
+  const keyboardW = kb.width;
+  const keyW = keyboardW / notes.length;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(keyboardLeft, keyY, keyboardW, KEYBOARD_H);
 
   notes.forEach((m, i) => {
-    const x = kb.left + i * keyW;
-    const active = activeMidi !== null && Math.round(activeMidi) === m;
-    ctx.strokeStyle = '#4a3325';
-    ctx.lineWidth = 2;
-    ctx.fillStyle = active ? '#ffb85c99' : '#2b1f16';
-    ctx.fillRect(x + 1, keyY + 1, keyW - 2, KEYBOARD_H - 2);
-    ctx.strokeRect(x, keyY, keyW, KEYBOARD_H);
-    ctx.fillStyle = active ? '#ffffff' : '#ffd08a';
-    ctx.font = '11px "Courier New", monospace';
-    ctx.fillText(midiName(m), x + 4, keyY + 20);
+    const x = keyboardLeft + i * keyW;
+    const isMelody = activeMidi !== null && Math.round(activeMidi) === m;
+    const isRoot = chordRoot !== null && chordRoot === m;
+    const isChordTone = chordTones.includes(m) && !isRoot;
+    const isC = (((m % 12) + 12) % 12) === 0;
+
+    let bg;
+    if (isMelody) bg = 'rgba(255,204,0,0.8)';
+    else if (isRoot) bg = 'rgba(255,204,0,0.4)';
+    else if (isChordTone) bg = 'rgba(255,204,0,0.2)';
+    else bg = isC ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)';
+    ctx.fillStyle = bg;
+    ctx.fillRect(x + 1, keyY + 2, keyW - 2, KEYBOARD_H - 4);
+
+    ctx.strokeStyle = 'rgba(255,204,0,0.25)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, keyY + 0.5, keyW - 1, KEYBOARD_H - 1);
   });
 }
 
-function drawCursor(pt, color) {
-  const x = (1 - pt.x) * canvas.width;
-  const y = pt.y * canvas.height;
-  ctx.strokeStyle = color;
+function drawHand(landmarks, color, label) {
+  const toX = (lm) => (1 - lm.x) * canvas.width;
+  const toY = (lm) => lm.y * canvas.height;
+  const tip = landmarks[8];
+  const tx = toX(tip), ty = toY(tip);
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(tx, ty, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(x, y, 10, 0, Math.PI * 2);
+  ctx.arc(tx, ty, 18, 0, Math.PI * 2);
   ctx.stroke();
+}
+
+function drawPitchLine(pt) {
+  const x = (1 - pt.x) * canvas.width;
+  ctx.strokeStyle = 'rgba(255,204,0,0.4)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 6]);
+  ctx.beginPath();
+  ctx.moveTo(x, 0);
+  ctx.lineTo(x, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawVolumeLine(pt) {
+  const y = pt.y * canvas.height;
+  ctx.strokeStyle = 'rgba(255,204,0,0.4)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 6]);
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(canvas.width, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 async function start() {
@@ -512,28 +734,46 @@ async function start() {
     await Tone.start();
     initAudio();
     const hands = new Hands({
-      locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${f}`
+      locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${f}`,
     });
-    hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.5,
+    });
     hands.onResults(onResults);
 
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 1280, height: 720, facingMode: 'user' },
+      audio: false,
+    });
     video.srcObject = stream;
+    await new Promise((r) => (video.onloadedmetadata = r));
     await video.play();
 
     const camera = new Camera(video, {
       onFrame: async () => { await hands.send({ image: video }); },
-      width: 1280, height: 720
+      width: 1280,
+      height: 720,
     });
     camera.start();
+
     startScreen.style.display = 'none';
   } catch (e) {
+    console.error(e);
     startBtn.disabled = false;
     startBtn.textContent = t('retry');
     alert(t('permError') + '\n' + e.message);
   }
 }
+
 startBtn.addEventListener('click', start);
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
 </script>
 </body>
-</html>"""
+</html>
+''')
